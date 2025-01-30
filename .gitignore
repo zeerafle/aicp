@@ -1,0 +1,19 @@
+# python generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# venv
+.venv
+
+# environment variable
+.env
+
+# model files
+*.gguf
+
+# executables files
+koboldcpp

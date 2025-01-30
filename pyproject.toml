@@ -1,0 +1,32 @@
+[project]
+name = "aicp"
+version = "0.1.0"
+description = "Add your description here"
+authors = [
+    { name = "Sam Fareez", email = "vsefareez@gmail.com" }
+]
+dependencies = [
+    "flask>=3.1.0",
+    "python-dotenv>=1.0.1",
+    "pylast>=5.3.0",
+    "requests>=2.32.3",
+]
+readme = "README.md"
+requires-python = ">= 3.8"
+
+[project.scripts]
+"aicp" = "aicp:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.rye]
+managed = true
+dev-dependencies = []
+
+[tool.hatch.metadata]
+allow-direct-references = true
+
+[tool.rye.scripts]
+dev = "flask run --debug"
