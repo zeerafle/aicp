@@ -31,9 +31,9 @@ def api(path):
         data = inject(request.json)
         
         # Forward the modified request to KoboldCPP
-        # response = requests.post(f"{KOBOLD_URL}/v1/completions", json=data)
-        # return jsonify(response.json())
-        return data['prompt']
+        response = requests.post(f"{KOBOLD_URL}/v1/completions", json=data)
+        return jsonify(response.json())
+        # return data['prompt']
     
     # print(f"{KOBOLD_URL}/{path}")
     # For all other API calls, forward them directly without modification
@@ -81,13 +81,14 @@ def get_recent_tracks() -> str:
             track = response.json()['recenttracks']['track'][0]
             artist = track['artist']['#text']
             title = track['name']
-            if track['@attr']['nowplaying'] == 'true':
+            if track.get('@attr').get('nowplaying') == 'true':
                 cache['current_track'] = f'{title} by {artist}'
                 cache['last_fetched'] = current_time
                 cache['listening'] = True
-    else:
-        return f'Currently listening: {cache["current_track"]}' if cache['listening'] else f'Recently listened: {cache["current_track"]}'
-    return ""
+
+    if cache['current_track'] is None:
+        return ''
+    return f'Currently listening: {cache["current_track"]}' if cache['listening'] else f'Recently listened: {cache["current_track"]}'
 
 
 if __name__ == '__main__':

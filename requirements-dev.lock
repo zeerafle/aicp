@@ -24,6 +24,8 @@ click==8.1.8
     # via flask
 flask==3.1.0
     # via aicp
+gunicorn==23.0.0
+    # via aicp
 h11==0.14.0
     # via httpcore
 httpcore==1.0.7
@@ -41,6 +43,8 @@ jinja2==3.1.5
 markupsafe==3.0.2
     # via jinja2
     # via werkzeug
+packaging==24.2
+    # via gunicorn
 pylast==5.3.0
     # via aicp
 python-dotenv==1.0.1
