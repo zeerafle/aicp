@@ -5,6 +5,7 @@ import os
 import json
 
 import datetime
+import random
 
 load_dotenv()
 
@@ -21,13 +22,14 @@ def api(path):
     # Handle specific route with custom processing
     if path == 'v1/completions':
         # Custom processing before forwarding
-        data = proxy(request.json)
+        data = inject(request.json)
         
         # Forward the modified request to KoboldCPP
         response = requests.post(f"{KOBOLD_URL}/v1/completions", json=data)
         return jsonify(response.json())
+        # return data['prompt']
     
-    print(f"{KOBOLD_URL}/{path}")
+    # print(f"{KOBOLD_URL}/{path}")
     # For all other API calls, forward them directly without modification
     try:
         response = requests.request(
@@ -43,20 +45,21 @@ def api(path):
         return 'Fail'
 
 
-def proxy(data):
+def inject(data) -> dict:
     # Inject real-time data here
-    add_prompt = PRE_PROMPT + f"Current time: {get_time()}\nCurrently listening: {get_recent_tracks()}"
+    current_time = get_time()
+    current_plays = get_recent_tracks()
+    add_prompt = '\n'.join([PRE_PROMPT, current_time, current_plays])
     data['prompt'] = f'{add_prompt}\n{data['prompt']}'
-    print(data)
     return data
 
 
-def get_time():
+def get_time() -> str:
     now = datetime.datetime.now()
-    return str(now)
+    return "Current time: " + now.strftime("%H:%M:%S")
 
 
-def get_recent_tracks():
+def get_recent_tracks() -> str:
     params = {"method": "user.getrecenttracks",
               "user": USER,
               "api_key": os.getenv('LASTFM_API_KEY'),
@@ -67,7 +70,10 @@ def get_recent_tracks():
         track = response.json()['recenttracks']['track'][0]
         artist = track['artist']['#text']
         title = track['name']
-        return f'{artist} - {title}'
+        if track['@attr']['nowplaying'] == 'true':
+            return f'Currently listening: {title} by {artist}'
+        return f'Recently listened: {title} by {artist}'
+    return ""
 
 
 if __name__ == '__main__':
