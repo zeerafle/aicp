@@ -5,7 +5,7 @@ import os
 import json
 
 import datetime
-import random
+import time
 
 load_dotenv()
 
@@ -13,6 +13,12 @@ app = Flask(__name__)
 KOBOLD_URL = "http://localhost:8005"
 PRE_PROMPT = "Here are current additional information. You're free to whether to talk about this or not\n"
 USER = 'zeerafle'
+
+cache = {
+    "current_track": None,
+    "last_fetched": 0,
+    "listening": False
+}
 
 
 # mask koboldai api
@@ -25,9 +31,9 @@ def api(path):
         data = inject(request.json)
         
         # Forward the modified request to KoboldCPP
-        response = requests.post(f"{KOBOLD_URL}/v1/completions", json=data)
-        return jsonify(response.json())
-        # return data['prompt']
+        # response = requests.post(f"{KOBOLD_URL}/v1/completions", json=data)
+        # return jsonify(response.json())
+        return data['prompt']
     
     # print(f"{KOBOLD_URL}/{path}")
     # For all other API calls, forward them directly without modification
@@ -60,19 +66,27 @@ def get_time() -> str:
 
 
 def get_recent_tracks() -> str:
-    params = {"method": "user.getrecenttracks",
-              "user": USER,
-              "api_key": os.getenv('LASTFM_API_KEY'),
-              "limit": 1,
-              "format": "json"}
-    response = requests.get(os.environ['LASTFM_API_ROOT'], params=params)
-    if response.status_code == 200:
-        track = response.json()['recenttracks']['track'][0]
-        artist = track['artist']['#text']
-        title = track['name']
-        if track['@attr']['nowplaying'] == 'true':
-            return f'Currently listening: {title} by {artist}'
-        return f'Recently listened: {title} by {artist}'
+    global cache
+
+    current_time = time.time()
+    # Fetch new data if cache is empty or expired
+    if cache['current_track'] is None or current_time - cache['last_fetched'] > 60:
+        params = {"method": "user.getrecenttracks",
+                "user": USER,
+                "api_key": os.getenv('LASTFM_API_KEY'),
+                "limit": 1,
+                "format": "json"}
+        response = requests.get(os.environ['LASTFM_API_ROOT'], params=params)
+        if response.status_code == 200:
+            track = response.json()['recenttracks']['track'][0]
+            artist = track['artist']['#text']
+            title = track['name']
+            if track['@attr']['nowplaying'] == 'true':
+                cache['current_track'] = f'{title} by {artist}'
+                cache['last_fetched'] = current_time
+                cache['listening'] = True
+    else:
+        return f'Currently listening: {cache["current_track"]}' if cache['listening'] else f'Recently listened: {cache["current_track"]}'
     return ""
 
 
