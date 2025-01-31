@@ -23,18 +23,14 @@ cache = {
 
 # mask koboldai api
 @app.route('/<path:path>', methods=['GET', 'POST'])
-def api(path):
-    print(path)
+def proxy(path):
+    data = request.json if request.method == 'POST' else None
+
     # Handle specific route with custom processing
     if path == 'v1/completions':
         # Custom processing before forwarding
-        data = inject(request.json)
+        data = inject(data)
         
-        # Forward the modified request to KoboldCPP
-        response = requests.post(f"{KOBOLD_URL}/v1/completions", json=data)
-        return jsonify(response.json())
-        # return data['prompt']
-    
     # print(f"{KOBOLD_URL}/{path}")
     # For all other API calls, forward them directly without modification
     try:
@@ -42,8 +38,8 @@ def api(path):
             method=request.method,
             url=f"{KOBOLD_URL}/{path}",
             headers={key: value for key, value in request.headers if key != 'Host'},
-            json=request.json if request.method == 'POST' else None,
-            params=request.args,
+            json=data,
+            params=request.args
         )
         return jsonify(response.json())
     except Exception as e:
@@ -88,7 +84,7 @@ def get_recent_tracks() -> str:
 
     if cache['current_track'] is None:
         return ''
-    return f'Currently listening: {cache["current_track"]}' if cache['listening'] else f'Recently listened: {cache["current_track"]}'
+    return f'{{user}} currently listening: {cache["current_track"]}' if cache['listening'] else f'{{user}} recently listened: {cache["current_track"]}'
 
 
 if __name__ == '__main__':
